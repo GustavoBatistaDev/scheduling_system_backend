@@ -5,7 +5,7 @@ const { getUserByIdService } = require('../../global/services/getUserById.servic
 
 dotenv.config();
 
-const verifyLoggedUser = async (req, res, next) => {
+const verifyLoggedUserMiddleware = async (req, res, next) => {
 
     const { authorization } = req.headers;
 
@@ -39,5 +39,5 @@ const verifyLoggedUser = async (req, res, next) => {
 };
 
 module.exports = {
-    verifyLoggedUser
+    verifyLoggedUserMiddleware
 };

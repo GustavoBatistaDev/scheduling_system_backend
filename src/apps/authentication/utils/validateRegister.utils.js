@@ -63,9 +63,7 @@ const validatorFirstName= (firstName) => {
 };
 
 const validatorCpf= (cpf) => {
-   
     const regexCpf = /^\d+$/;
-   
     return  regexCpf.test(cpf);;
 
 };
@@ -80,5 +78,10 @@ const validatorPassword= (password) => {
 };
 
 module.exports = {
-    validatorFieldFilled
+    validatorFieldFilled,
+    validatorEmail,
+    validatorFirstName,
+    validatorCpf,
+    validatorLastName,
+    validatorPassword  
 };

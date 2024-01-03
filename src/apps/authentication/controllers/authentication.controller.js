@@ -95,7 +95,7 @@ const loginController = async (req, res) => {
             return res.status(400).json({ message: 'Email ou senha inválidos.' })
         }
 
-        const token = generatorTokenJwtService(userExists.rows[0], '30min');
+        const token = generatorTokenJwtService(userExists.rows[0], '600min');
 
         return res.json({
             user: { ...rows[0] },

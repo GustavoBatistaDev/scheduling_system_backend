@@ -1,11 +1,10 @@
 const express = require('express');
-
 const cors = require('cors');
+
 const authRoutes = require('./apps/authentication/routes/authentication.routes');
-const { verifyLoggedUser } = require('./apps/authentication/middlewares/auth.middleware');
-const specialtyRoutes = require('./apps/specialty/routes/specialty.routes');
-const doctorRoutes = require('./apps/doctor/routes/doctor.routes');
-const schedulingRoutes = require('./apps/scheduling/routes/scheduling.routes');
+const { verifyLoggedUserMiddleware } = require('./apps/authentication/middlewares/auth.middleware');
+const profileRoutes = require('./apps/user_profile/routes/profile.routes');
+
 
 const app = express();
 
@@ -15,13 +14,10 @@ app.use(cors());
 
 app.use(authRoutes);
 
-app.use(verifyLoggedUser);
+app.use(verifyLoggedUserMiddleware);
 
-app.use(specialtyRoutes);
+app.use(profileRoutes);
 
-app.use(doctorRoutes);
-
-app.use(schedulingRoutes);
 
 module.exports = {
     app
