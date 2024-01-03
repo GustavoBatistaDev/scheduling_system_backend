@@ -1,5 +1,6 @@
 const updateProfileService = require("../services/updateProfile.service");
 const aws = require('aws-sdk');
+
 const { updateUserPhotoService } = require("../services/updateUserPhoto.service");
 
 const endpoint = new aws.Endpoint(process.env.BUCKET_ENDPOINT);
@@ -26,6 +27,7 @@ const updateProfileController = async (req, res) => {
             message: 'Verifique os campos e tente novamente.'
         });
     }
+
     return res.status(204).send();
 };
 
@@ -68,13 +70,10 @@ const updatePhotoProfileController = async (req, res) => {
         }
 
         await updateUserPhotoService(req.user.id, upLoadfile.Location)
-        
-
         return res.status(204).send();
+
     } catch (error) {
-
         console.log(error);
-
         return res.status(500).json({ message: 'erro interno do servidor'});
     }
 };
