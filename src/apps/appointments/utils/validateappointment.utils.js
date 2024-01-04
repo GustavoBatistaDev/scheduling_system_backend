@@ -15,8 +15,8 @@ const validatorPcd= (pcd) => {
     const validOptions = ['s', 'n'];
 
     if(
-        pcd.toLowerCase() != validOptions[0] &&
-        pcd.toLowerCase() != validOptions[1] 
+        pcd?.toLowerCase() != validOptions[0] &&
+        pcd?.toLowerCase() != validOptions[1] 
 
     )  return false;
 
@@ -29,8 +29,8 @@ const validatorchronicDisease= (chronic_disease) => {
     const validOptions = ['s', 'n'];
 
     if(
-        chronic_disease.toLowerCase() != validOptions[0] &&
-        chronic_disease.toLowerCase() != validOptions[1] 
+        chronic_disease?.toLowerCase() != validOptions[0] &&
+        chronic_disease?.toLowerCase() != validOptions[1] 
 
     )  return false;
 

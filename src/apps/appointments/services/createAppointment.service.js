@@ -1,6 +1,8 @@
 const pool = require('../../../connection');
 
 const validateAppointment = require("../utils/validateappointment.utils");
+const { createDoctorUnavailabilityService } = require('./createDoctorUnavailability.service');
+const { getAvailableDates } = require('./getAvailableDates.service');
 
 const createAppointmentService = async (
     {
@@ -14,8 +16,6 @@ const createAppointmentService = async (
         specialties_id
     }
 ) => {
-
-    console.log(pcd);
 
     const appointmentIsValid = await validateAppointment(
        {
@@ -31,6 +31,25 @@ const createAppointmentService = async (
         return false;
     }
 
+    const doctor = await pool.query(
+    `
+        select doctors.id, doctors.name, specialties.name as specialty_name from doctors_specialties 
+        inner join doctors on doctors_specialties.doctor_id = doctors.id
+        inner join specialties on doctors_specialties.specialty_id = specialties.id
+        where doctors_specialties.specialty_id = $1;
+        ;
+
+    `, [specialties_id]
+    );
+
+   
+    const availableHours = await getAvailableDates(doctor.rows[0].id, day, hour);
+
+    if(availableHours.rowCount > 0){
+        return {
+            message: 'Data e hora indisponível. Selecione um outra hora.'
+        }
+    }
 
     const { rows, rowCount } = await pool.query(
     `
@@ -69,18 +88,23 @@ const createAppointmentService = async (
     ],
     );
 
+    //doctor_id, unavailable_date, start_time, end_time
+
+    const end_time = '08:00:00'; // to do criar logica para inserir o end_time correto
+
+    await createDoctorUnavailabilityService({
+        doctor_id: doctor.rows[0].id,
+        unavailable_date: day,
+        start_time: hour,
+        end_time: end_time
+    });
+
     return {
     rows,
     rowCount,
 
     };
 }
-
-
-
-
-
-
 
 module.exports = createAppointmentService;
 
