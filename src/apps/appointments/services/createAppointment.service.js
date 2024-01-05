@@ -3,6 +3,8 @@ const pool = require('../../../connection');
 const validateAppointment = require("../utils/validateappointment.utils");
 const { createDoctorUnavailabilityService } = require('./createDoctorUnavailability.service');
 const { getAvailableDates } = require('./getAvailableDates.service');
+const medicalAppointmentRecordService = require('./medicalAppointmentRecord.service');
+// const sendMessageWhatsApp = require('./sendMessageWhatsApp.service');
 
 const createAppointmentService = async (
     {
@@ -42,7 +44,6 @@ const createAppointmentService = async (
     `, [specialties_id]
     );
 
-   
     const availableHours = await getAvailableDates(doctor.rows[0].id, day, hour);
 
     if(availableHours.rowCount > 0){
@@ -88,15 +89,19 @@ const createAppointmentService = async (
     ],
     );
 
-    //doctor_id, unavailable_date, start_time, end_time
-
-    const end_time = '08:00:00'; // to do criar logica para inserir o end_time correto
+    // const data = await sendMessageWhatsApp(day, hour); whatsMsg
 
     await createDoctorUnavailabilityService({
         doctor_id: doctor.rows[0].id,
         unavailable_date: day,
         start_time: hour,
-        end_time: end_time
+
+    });
+
+    await medicalAppointmentRecordService({
+        doctor_id: doctor.rows[0].id,
+        appointment_id: rows[0].id,
+        user_id: user_id
     });
 
     return {
