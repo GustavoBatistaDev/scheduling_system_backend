@@ -59,8 +59,6 @@ const validateAppointment = async (
     }
 ) => {
 
- 
-
     const dateIsValid = validatorDate(day);
     const hourIsValid = validatorHour(hour);
     const pcdIsValid = validatorPcd(pcd);

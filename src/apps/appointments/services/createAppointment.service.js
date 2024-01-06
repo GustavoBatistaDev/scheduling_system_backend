@@ -48,7 +48,7 @@ const createAppointmentService = async (
 
     if(availableHours.rowCount > 0){
         return {
-            message: 'Data e hora indisponível. Selecione um outra hora.'
+            message: 'Data e hora indisponíveis. Selecione uma outra data e hora.'
         }
     }
 

@@ -63,7 +63,6 @@ const registerController = async (req, res) => {
         return res.status(201).json({user:{...newUser}, message: 'Verifique seu email.'});
 
     } catch (error) {
-
         return res.status(500).json({ message: 'Erro interno do servidor. Tente novamente.' });
     }
 }
@@ -95,7 +94,7 @@ const loginController = async (req, res) => {
             return res.status(400).json({ message: 'Email ou senha inválidos.' })
         }
 
-        const token = generatorTokenJwtService(userExists.rows[0], '600min');
+        const token = generatorTokenJwtService(userExists.rows[0], '11112600min');
 
         return res.json({
             user: { ...rows[0] },

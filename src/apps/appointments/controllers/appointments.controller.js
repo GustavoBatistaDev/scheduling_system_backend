@@ -1,8 +1,14 @@
+const cancelAppointmentService = require("../services/cancelAppointment.service");
 const createAppointmentService = require("../services/createAppointment.service");
+const getAllAppointmentsService = require("../services/getAllAppointments.service");
 const getAppointmentService = require("../services/getAppointment.service");
+const getAppointmentByDateService = require("../services/getAppointmentByDate.service");
 const getAppointmentsService = require("../services/getAppointments.service");
 const { getAvailableHoursService } = require("../services/getAvailableHours.service");
+const rescheduleUpdateService = require("../services/rescheduleUpdate.service");
 const sendMessageWhatsApp = require("../services/sendMessageWhatsApp.service");
+const updateStatusAppointmentService = require("../services/updateStatusAppointment.service");
+const updateStatueAppointmentService = require("../services/updateStatusAppointment.service");
 const isCompleteProfile = require("../utils/isCompleteProfile.utils");
 const validateId = require("../utils/validateId.utils");
 
@@ -30,10 +36,11 @@ const createAppointmentController = async (req, res) => {
 
     if(newAppointment?.message){
         return res.status(400).json({
-            newAppointment
+            message: newAppointment.message
         });
     }   
 
+    await sendMessageWhatsApp(body.day, body.hour, `${req.user.first_name} ${req.user.last_name}`)
     return res.json(newAppointment.rows[0]);
 };
 
@@ -66,7 +73,7 @@ const getAvailableHours = async (req, res) => {
 
 const getAppointmentsController = async (req, res) => {
 
-    const appointments = await getAppointmentsService(req.user.id);
+    const appointments = await getAppointmentsService(req.user.id, false);
 
     return res.json(appointments.rows);
 };
@@ -87,19 +94,158 @@ const getAppointmentController = async (req, res) => {
 
     if(appointment.rowCount < 1){
         return res.status(404).json({
-            message: 'Agendamento não existe.'
+            message: 'Agendamento não existe ou foi cancelado.'
+        });
+    }
+
+
+    if(appointment?.rows[0]?.user_id != req.user.id){
+        return res.status(401).json({
+            message: 'Você não tem permissão para realizar esta ação.'
         });
     }
 
     return res.json(appointment.rows[0]);
 };
 
+const getAllAppointmentController = async (req, res) => {
 
+    const appointment = await getAllAppointmentsService();
+
+    if(appointment.rowCount < 1){
+        return res.status(404).json({
+            message: 'Agendamento não existe ou foi cancelado.'
+        });
+    }
+
+    return res.json(appointment.rows);
+};
+
+const cancelAppointmentController = async (req, res) => {
+
+    const { id } = req.params;
+
+    const idISvalid = validateId(id);
+
+    if(!idISvalid){
+        return res.status(400).json({
+            message: 'Id precisa ser um número.'
+        }); 
+    }
+
+    const appointment = await getAppointmentService(id);
+
+    console.log(appointment);
+
+    if(appointment.rowCount < 1){
+        return res.status(404).json({
+            message: 'Agendamento não existe ou foi cancelado.'
+        });
+    }
+
+    if(appointment.rows[0].user_id != req.user.id){
+        return res.status(401).json({
+            message: 'Você não tem permissão para realizar esta ação.'
+        });
+    }
+    
+    const cancelAppointment = await cancelAppointmentService(id, req.user.id);
+
+    // const updatedStatusTextAppointment = updateStatusAppointmentService(cancelAppointment.rows[0].id, 'cancelado')
+
+    return res.status(200).json(cancelAppointment.rows[0]);
+};
+
+
+const concludedlAppointmentController = async (req, res) => {
+
+    const { id } = req.params;
+
+    const idISvalid = validateId(id);
+
+    if(!idISvalid){
+        return res.status(400).json({
+            message: 'Id precisa ser um número.'
+        }); 
+    }
+
+    const appointment = await getAppointmentService(id);
+
+    if(appointment.rowCount < 1){
+        return res.status(404).json({
+            message: 'Agendamento não existe ou foi cancelado.'
+        });
+    }
+    
+    const updatedStatusTextAppointment = await updateStatusAppointmentService(appointment.rows[0].id, 'concluído')
+
+    return res.status(200).json(updatedStatusTextAppointment.rows[0]);
+};
+
+
+
+const rescheduleAppointmentController = async (req, res) => {
+
+    const { id } = req.params;
+
+    const body = req.body;
+
+
+
+    const appointment = await getAppointmentService(id);
+
+    if(appointment.rowCount < 1){
+        return res.status(404).json({
+            message: 'O agendamento não existe ou foi cancelado.'
+        });
+    }
+
+    const appointmentWithTheSameDate = await getAppointmentByDateService(
+        body.day,
+        body.hour
+    );
+
+
+
+    if(appointmentWithTheSameDate.rowCount > 0){ 
+        return res.status(400).json({
+            message: 'Data e hora indisponível.'
+        });
+    }
+
+    const updatedAppointmentObject = {
+        day: body.day ? body.day : appointment.rows[0].day,
+        hour: body.hour ? body.hour : appointment.rows[0].hour,
+        reason_for_consultation: body.reason_for_consultation ? body.reason_for_consultation : appointment.rows[0].reason_for_consultation,
+        special_need: body.special_need ? body.special_need : appointment.rows[0].special_need,
+        specialties_id: body.specialties_id ? body.specialties_id : appointment.rows[0].specialties_id,
+        pcd: body.pcd ? body.pcd : appointment.rows[0].pcd,
+        chronic_disease: body.chronic_disease ? body.chronic_disease : appointment.rows[0].chronic_disease,
+    };
+
+    const reschedule = await rescheduleUpdateService(updatedAppointmentObject, appointment.rows[0].id);
+
+    console.log('reschedule');
+    console.log(reschedule)
+
+
+    if(!reschedule){
+        return res.status(400).json({
+            message: 'Confira os dados e tente novamente.'
+        });
+    }
+    
+    return res.json(reschedule?.rows[0]);
+};
 
 module.exports = {
     createAppointmentController,
     getAvailableHours,
     getAppointmentsController,
-    getAppointmentController
+    getAppointmentController,
+    cancelAppointmentController,
+    concludedlAppointmentController,
+    getAllAppointmentController,
+    rescheduleAppointmentController
 };
 
