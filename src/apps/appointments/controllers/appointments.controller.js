@@ -1,3 +1,4 @@
+const nodeSchedule = require('node-schedule');
 const cancelAppointmentService = require("../services/cancelAppointment.service");
 const createAppointmentService = require("../services/createAppointment.service");
 const getAllAppointmentsService = require("../services/getAllAppointments.service");
@@ -11,36 +12,53 @@ const updateStatusAppointmentService = require("../services/updateStatusAppointm
 const updateStatueAppointmentService = require("../services/updateStatusAppointment.service");
 const isCompleteProfile = require("../utils/isCompleteProfile.utils");
 const validateId = require("../utils/validateId.utils");
+const formatDate = require('../utils/formatDate.utils');
+const removeSeconds = require('../utils/removeSeconds.utils');
+
+const cron = require('node-cron');
+const parseDateTime = require('../utils/createDate.utils');
+
+
 
 const createAppointmentController = async (req, res) => {
-
     const profileIsComplete = isCompleteProfile(req.user);
 
-    if(profileIsComplete?.message){
+    if (profileIsComplete?.message) {
         return res.status(400).json(profileIsComplete);
     }
 
     const body = req.body;
-
     const user_id = req.user.id;
-
     body.user_id = user_id;
 
     const newAppointment = await createAppointmentService(body);
-    
-    if(!newAppointment){
+
+    if (!newAppointment) {
         return res.status(400).json({
             message: 'Verifique os campos e tente novamente.'
         });
     }
 
-    if(newAppointment?.message){
+    if (newAppointment?.message) {
         return res.status(400).json({
             message: newAppointment.message
         });
-    }   
+    }
 
-    await sendMessageWhatsApp(body.day, body.hour, `${req.user.first_name} ${req.user.last_name}`)
+    const message = `Olá, ${req.user.first_name}! Tudo bem? Você tem um novo agendamento marcado\
+    para o dia ${formatDate(body.day)} às ${removeSeconds(body.hour)}hrs.\
+    Você pode cancelar até 1 dia anterior à consulta; caso contrário,\
+    será cobrada uma taxa.`;
+
+    // await sendMessageWhatsApp(message)
+
+    const DateAppointment = parseDateTime({ day: body.day, hour: body.hour});
+
+    //nodeSchedule.scheduleJob(DateAppointment, () => {
+     //   console.log('mensagem enviada')
+    //    sendMessageWhatsApp(`Olá, ${req.user.first_name}! Estou aqui para lembrar da sua consulta amanhã às ${removeSeconds(body.hour)}hrs.`);
+    //}); 
+
     return res.json(newAppointment.rows[0]);
 };
 
@@ -190,8 +208,6 @@ const rescheduleAppointmentController = async (req, res) => {
 
     const body = req.body;
 
-
-
     const appointment = await getAppointmentService(id);
 
     if(appointment.rowCount < 1){
@@ -204,8 +220,6 @@ const rescheduleAppointmentController = async (req, res) => {
         body.day,
         body.hour
     );
-
-
 
     if(appointmentWithTheSameDate.rowCount > 0){ 
         return res.status(400).json({
@@ -225,16 +239,24 @@ const rescheduleAppointmentController = async (req, res) => {
 
     const reschedule = await rescheduleUpdateService(updatedAppointmentObject, appointment.rows[0].id);
 
-    console.log('reschedule');
-    console.log(reschedule)
-
-
     if(!reschedule){
         return res.status(400).json({
             message: 'Confira os dados e tente novamente.'
         });
     }
+
+    const DateAppointment = parseDateTime({
+        day: updatedAppointmentObject.day,
+        hour: updatedAppointmentObject.hour,
+    });
+
+    await sendMessageWhatsApp(`Olá, ${req.user.first_name}! Você reagendou a sua consulta para o dia ${formatDate(body.day)} às ${removeSeconds(body.hour)}hrs.`);
     
+    nodeSchedule.scheduleJob(DateAppointment, () => {
+        console.log('mensagem enviada')
+        sendMessageWhatsApp(`Olá, ${req.user.first_name}! Estou aqui para lembrar da sua consulta amanhã às ${removeSeconds(body.hour)}hrs.`);
+    }); 
+
     return res.json(reschedule?.rows[0]);
 };
 
