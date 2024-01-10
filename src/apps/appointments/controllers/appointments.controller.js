@@ -17,8 +17,9 @@ const removeSeconds = require('../utils/removeSeconds.utils');
 
 const cron = require('node-cron');
 const parseDateTime = require('../utils/createDate.utils');
-
-
+const { deleteAvailableDates } = require('../services/deleteAvailableDate.service');
+const getDoctorBySpecialty = require('../../doctors/services/getDoctorBySpecialty.service');
+const { updateUnavailableDoctor } = require('../services/updateUnavailableDoctor.service');
 
 const createAppointmentController = async (req, res) => {
     const profileIsComplete = isCompleteProfile(req.user);
@@ -50,14 +51,14 @@ const createAppointmentController = async (req, res) => {
     Você pode cancelar até 1 dia anterior à consulta; caso contrário,\
     será cobrada uma taxa.`;
 
-    // await sendMessageWhatsApp(message)
+    //sendMessageWhatsApp(message)
 
-    const DateAppointment = parseDateTime({ day: body.day, hour: body.hour});
+    //const DateAppointment = parseDateTime({ day: body.day, hour: body.hour});
 
     //nodeSchedule.scheduleJob(DateAppointment, () => {
-     //   console.log('mensagem enviada')
+   //     console.log('mensagem enviada')
     //    sendMessageWhatsApp(`Olá, ${req.user.first_name}! Estou aqui para lembrar da sua consulta amanhã às ${removeSeconds(body.hour)}hrs.`);
-    //}); 
+   // }); 
 
     return res.json(newAppointment.rows[0]);
 };
@@ -153,7 +154,7 @@ const cancelAppointmentController = async (req, res) => {
 
     const appointment = await getAppointmentService(id);
 
-    console.log(appointment);
+
 
     if(appointment.rowCount < 1){
         return res.status(404).json({
@@ -169,9 +170,11 @@ const cancelAppointmentController = async (req, res) => {
     
     const cancelAppointment = await cancelAppointmentService(id, req.user.id);
 
-    // const updatedStatusTextAppointment = updateStatusAppointmentService(cancelAppointment.rows[0].id, 'cancelado')
+    await deleteAvailableDates(appointment.rows[0].id);
+    
+    const updatedStatusTextAppointment = await updateStatusAppointmentService(cancelAppointment.rows[0].id, 'cancelado')
 
-    return res.status(200).json(cancelAppointment.rows[0]);
+    return res.status(200).json(updatedStatusTextAppointment.rows[0]);
 };
 
 
@@ -194,6 +197,8 @@ const concludedlAppointmentController = async (req, res) => {
             message: 'Agendamento não existe ou foi cancelado.'
         });
     }
+
+    await deleteAvailableDates(appointment.rows[0].id);
     
     const updatedStatusTextAppointment = await updateStatusAppointmentService(appointment.rows[0].id, 'concluído')
 
@@ -245,17 +250,26 @@ const rescheduleAppointmentController = async (req, res) => {
         });
     }
 
+    const updatedUnavailableDoctorObject = {
+        doctor_id: updatedAppointmentObject.specialties_id,
+        unavailable_date: updatedAppointmentObject.day,
+        start_time: updatedAppointmentObject.hour,
+        appointment_id: appointment.rows[0].id
+    };
+
+    await updateUnavailableDoctor(updatedUnavailableDoctorObject);
+
     const DateAppointment = parseDateTime({
         day: updatedAppointmentObject.day,
         hour: updatedAppointmentObject.hour,
     });
 
-    await sendMessageWhatsApp(`Olá, ${req.user.first_name}! Você reagendou a sua consulta para o dia ${formatDate(body.day)} às ${removeSeconds(body.hour)}hrs.`);
+    //await sendMessageWhatsApp(`Olá, ${req.user.first_name}! Você reagendou a sua consulta para o dia ${formatDate(body.day)} às ${removeSeconds(body.hour)}hrs.`);
     
-    nodeSchedule.scheduleJob(DateAppointment, () => {
-        console.log('mensagem enviada')
-        sendMessageWhatsApp(`Olá, ${req.user.first_name}! Estou aqui para lembrar da sua consulta amanhã às ${removeSeconds(body.hour)}hrs.`);
-    }); 
+    //nodeSchedule.scheduleJob(DateAppointment, () => {
+     //   console.log('mensagem enviada')
+    //    sendMessageWhatsApp(`Olá, ${req.user.first_name}! Estou aqui para lembrar da sua consulta amanhã às ${removeSeconds(body.hour)}hrs.`);
+   // }); 
 
     return res.json(reschedule?.rows[0]);
 };

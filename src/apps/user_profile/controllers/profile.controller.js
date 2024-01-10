@@ -2,6 +2,7 @@ const updateProfileService = require("../services/updateProfile.service");
 const aws = require('aws-sdk');
 
 const { updateUserPhotoService } = require("../services/updateUserPhoto.service");
+const { validateUpdateProfileService } = require("../services/validateUpdateProfile.service");
 
 const endpoint = new aws.Endpoint(process.env.BUCKET_ENDPOINT);
 
@@ -20,12 +21,11 @@ const getDataProfileController = async (req, res) => {
 
 const updateProfileController = async (req, res) => {
     const body = req.body;
+
     const updated = await updateProfileService(body, req.user.id);
 
-    if(!updated){
-        return res.status(400).json({
-            message: 'Verifique os campos e tente novamente.'
-        });
+    if(updated?.message){
+        return res.status(400).json(updated);
     }
 
     return res.status(204).send();

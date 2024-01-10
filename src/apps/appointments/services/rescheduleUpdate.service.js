@@ -15,7 +15,11 @@ const rescheduleUpdateService = async (appointmentObject, appointment_id) => {
         return false;
     }
 
+    appointmentObject.pcd = appointmentObject.pcd.toLowerCase() === 'n' ? false : true;
+    appointmentObject.chronic_disease = appointmentObject.chronic_disease.toLowerCase() === 'n' ? false : true;
+
     try {
+
         const {rows, rowCount } = await pool.query(`
             UPDATE appointments
             SET

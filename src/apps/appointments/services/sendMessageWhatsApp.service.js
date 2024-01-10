@@ -19,7 +19,6 @@ const sendMessageWhatsApp = async (automaticMessage, phone) => {
 
     console.log(data)
     // { msg: 'Messages sent' }
-    
 };
 
 module.exports = sendMessageWhatsApp;

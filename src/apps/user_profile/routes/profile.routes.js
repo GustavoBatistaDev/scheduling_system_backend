@@ -6,7 +6,7 @@ const profileRoutes = express();
 
 profileRoutes.get('/profile', getDataProfileController);
 profileRoutes.patch('/profile', updateProfileController);
-profileRoutes.post('/upload/photo', multer.single('file'), updatePhotoProfileController);
-profileRoutes.delete('/upload/photo', multer.single('file'), deletePhotoProfile);
+profileRoutes.post('/photo', multer.single('file'), updatePhotoProfileController);
+profileRoutes.delete('/photo', multer.single('file'), deletePhotoProfile);
 
 module.exports = profileRoutes;

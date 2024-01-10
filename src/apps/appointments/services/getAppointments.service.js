@@ -2,7 +2,7 @@ const pool = require("../../../connection");
 
 const getAppointmentsService = async (id, cancelled) => {
     const { rows,  rowCount } = await pool.query(`
-            select ap.id, u.first_name, u.last_name, spec.name as specialty,
+            select ap.id, ap.cancelled, u.first_name, u.last_name, spec.name as specialty,
             ap.status, doc.name as doctor_name, ap.day, ap.hour, ap.created_at,
             ap.reason_for_consultation, ap.special_need
             from doctors_appointments as dc inner join appointments as ap on dc.appointment_id = ap.id

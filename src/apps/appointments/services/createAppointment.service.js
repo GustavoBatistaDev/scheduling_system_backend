@@ -52,6 +52,9 @@ const createAppointmentService = async (
         }
     }
 
+    pcd = pcd.toLowerCase() === 'n' ? false : true;
+    chronic_disease = chronic_disease.toLowerCase() === 'n' ? false : true;
+
     const { rows, rowCount } = await pool.query(
     `
         INSERT INTO appointments (
@@ -95,6 +98,8 @@ const createAppointmentService = async (
         doctor_id: doctor.rows[0].id,
         unavailable_date: day,
         start_time: hour,
+        appointment_id: rows[0].id
+        
 
     });
 

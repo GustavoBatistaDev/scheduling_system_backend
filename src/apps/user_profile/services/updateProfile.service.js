@@ -9,13 +9,13 @@ const { cpfFormatter } = require("../../authentication/utils/cpfFormatter.utils"
 const updateProfileService = async (dataUser, id) => {
     try {
 
-        const requestIsValid = validateUpdateProfileService(dataUser);
-
-        if(!requestIsValid){
-            return false;
-        }
-
         const user = await getUserByIdService(id);
+
+        const updatedIsValid = await validateUpdateProfileService(dataUser);
+        
+        if(updatedIsValid?.message){
+            return updatedIsValid;
+        }
 
         const emailExists = await getUserByEmail({
             email: dataUser.email,
@@ -25,6 +25,8 @@ const updateProfileService = async (dataUser, id) => {
         if(emailExists.rowCount > 0){
             return false;
         }
+
+        
 
         const dataUpdated = {
             first_name : dataUser.first_name ?? user.rows[0].first_name,
